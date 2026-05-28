@@ -2,6 +2,9 @@
 https://www.youtube.com/playlist?list=PLeqyOOqxeiIMQ8cxP8PmSD6FIDnY8e2rq
 
 TODO:
+1. Залить проект на GitHub и прислать ссылку на репозиторий;
+
+DONE:
 Написать программу, которая по введенному IP-адресу и маске определяет:
 	1. Адрес сети;
 	2. Широковещательный адрес;
