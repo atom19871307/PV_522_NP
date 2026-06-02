@@ -2,6 +2,14 @@
 https://www.youtube.com/playlist?list=PLeqyOOqxeiIMQ8cxP8PmSD6FIDnY8e2rq
 
 TODO:
+1. Использовать 'FormatLastError.lib' в Сервере;
+2. При подключении клиента, Сервер должен отображать его IP-адрес и порт;
+	https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-accept
+3. У клиента должна быть возможность ввести IP-адрес и порт Сервера с клавиатуры;
+4. Запустить Клиента либо Сервер на виртуальной машине, проверить подключение и убедиться в том,
+   что Сервер правильно отображает IP и Port клиента;
+
+DONE:
 1. Написать функцию ??? FormatLastError(???), которая по коду, возвращенному функцией WSAGetLastError()
    возвращает описание ошибки;
 2. Вынести функцию FormatLastError() в статическую библиотеку (*.lib);
