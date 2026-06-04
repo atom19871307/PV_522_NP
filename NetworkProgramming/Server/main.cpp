@@ -1,5 +1,5 @@
 ﻿//Server
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
+//#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -91,28 +91,31 @@ void main()
 		WSACleanup();
 		return;
 	}
-	cout << inet_ntoa(client_address.sin_addr) << ":" << ntohs(client_address.sin_port) << endl;
+	CHAR sz_client_address[32];
+	cout << inet_ntop(AF_INET, &client_address.sin_addr, sz_client_address, 32) << ":" << ntohs(client_address.sin_port) << endl;
 
 	//7) Получаем данные от клиента:
-	CHAR recv_buffer[MTU] = {};
 	CHAR send_buffer[MTU] = "Hello client";
 	INT iReceivedBytes = 0;
 	INT iSentBytes = 0;
 	do
 	{
+		CHAR recv_buffer[MTU] = {};
+		cout << &recv_buffer << endl;
 		iReceivedBytes = recv(client_socket, recv_buffer, MTU, 0);
 		//Функция recv() - Receive ожидает получение данных по указанному сокету, и возвращает количество полученных Байт.
 		if (iReceivedBytes > 0)
 		{
+			//sprintf(send_buffer, "\x1b[32m%s\x1b[0m", recv_buffer);
 			cout << "Received " << iReceivedBytes << " " << recv_buffer << endl;
-			iSentBytes = send(client_socket, send_buffer, strlen(send_buffer), 0);
+			iSentBytes = send(client_socket, recv_buffer, strlen(recv_buffer), 0);
 			if (iSentBytes == SOCKET_ERROR)	cout << "Send failed with error:\t" << WSAGetLastError() << endl;
 			else cout << iSentBytes << " Bytes sent" << endl;
 		}
 		else if (iReceivedBytes == 0) cout << "Connection closing..." << endl;
 		else cout << "Receive failed with error: " << WSAGetLastError() << endl;
 	} while (iReceivedBytes > 0);
-	
+
 	//8) Разрываем TCP-соединение:
 	iResult = shutdown(client_socket, SD_BOTH);
 	if (iResult != SOCKET_ERROR)cout << "shutdown failed with error:\t" << WSAGetLastError() << endl;
