@@ -2,6 +2,9 @@
 https://www.youtube.com/playlist?list=PLeqyOOqxeiIMQ8cxP8PmSD6FIDnY8e2rq
 
 TODO:
+1. Обеспечить возможность подключения к Серверу одновременно нескольких клиентов;
+
+TODO:
 1. Использовать 'FormatLastError.lib' в Сервере;
 2. При подключении клиента, Сервер должен отображать его IP-адрес и порт;
 	https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-accept
