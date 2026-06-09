@@ -10,6 +10,7 @@
 #include<WS2tcpip.h>
 #include<iphlpapi.h>
 #include<FormatLastError.h>
+#include<Messages.h>
 using namespace std;
 
 #pragma comment(lib, "WS2_32.lib")
@@ -17,6 +18,7 @@ using namespace std;
 
 #define MTU				 1500
 #define MAX_CONNECTIONS		3
+
 
 VOID ClientHandle(SOCKET client_socket);
 
@@ -29,6 +31,8 @@ INT g_ActiveClients = 0;
 void main()
 {
 	setlocale(LC_ALL, "");
+	DWORD dwError = 0;
+	CHAR szError[256] = {};
 	cout << "SERVER" << endl;
 	//1) Инициализация WinSOCK:
 	WSADATA wsaData;
@@ -81,7 +85,7 @@ void main()
 	}
 
 	//5) Запускаем прослушивание порта:
-	if (listen(listen_socket, 1) == SOCKET_ERROR)	//1 - Максимальное количество одновременно подключенных клиентов
+	if (listen(listen_socket, MAX_CONNECTIONS) == SOCKET_ERROR)	//1 - Максимальное количество одновременно подключенных клиентов
 	{
 		cout << "Listen failed with error: " << WSAGetLastError() << endl;
 		closesocket(listen_socket);
@@ -109,18 +113,30 @@ void main()
 
 		//7) Получаем данные от клиента:
 		//ClientHandle(client_socket);
-		client_sockets[g_ActiveClients] = client_socket;	//сохраняем сокет подключаемого клиента в массив
-		hThreads[g_ActiveClients] = CreateThread
-		(
-			NULL,	//атрибуты безопасности;
-			0,		//размер стека создаваемого потока. 0 - совместно используется основной стек программы;
-			(LPTHREAD_START_ROUTINE)ClientHandle,	//Указатель на функцию, которая будет выполняться в потоке;
-			//TODO:Проветрить
-			(LPVOID)client_sockets[g_ActiveClients],//Параметр, передаваемый в функцию. Функция, запускаемая в потоке должна принимать ???ОДИН??? И ТОЛЬКО ОДИН ПАРАМЕТР!!!
-			NULL,
-			&dwThreadIDs[g_ActiveClients]
-		);
-		g_ActiveClients++;
+		if (g_ActiveClients < MAX_CONNECTIONS)
+		{
+			client_sockets[g_ActiveClients] = client_socket;	//сохраняем сокет подключаемого клиента в массив
+			hThreads[g_ActiveClients] = CreateThread
+			(
+				NULL,	//атрибуты безопасности;
+				0,		//размер стека создаваемого потока. 0 - совместно используется основной стек программы;
+				(LPTHREAD_START_ROUTINE)ClientHandle,	//Указатель на функцию, которая будет выполняться в потоке;
+				//DONE:Проветрить
+				(LPVOID)client_sockets[g_ActiveClients],//Параметр, передаваемый в функцию. Функция, запускаемая в потоке должна принимать ???ОДИН??? И ТОЛЬКО ОДИН ПАРАМЕТР!!!
+				NULL,
+				&dwThreadIDs[g_ActiveClients]
+			);
+			g_ActiveClients++;
+		}
+		else
+		{
+			iResult = send(client_socket, DECLINE_MESSAGE, strlen(DECLINE_MESSAGE), 0);
+			dwError = WSAGetLastError();
+			if (iResult != 0)cout << FormatLastError(dwError, szError) << endl;
+			iResult = shutdown(client_socket, SD_BOTH); if (iResult != 0)cout << FormatLastError(WSAGetLastError(), szError) << endl;
+			iResult = closesocket(client_socket);		if (iResult != 0)cout << FormatLastError(WSAGetLastError(), szError) << endl;
+			cout << "DECLINED" << endl;
+		}
 	} while (true);
 	//Синхронизируем все потоки с основным потоком, в котором выполняется main()
 	{
@@ -163,6 +179,6 @@ VOID ClientHandle(SOCKET client_socket)
 	//8) Разрываем TCP-соединение:
 	iResult = shutdown(client_socket, SD_BOTH);
 	dwError = WSAGetLastError();
-	if (iResult != SOCKET_ERROR)cout << "shutdown failed with error:\t" << FormatLastError(dwError,szError) << endl;
+	if (iResult != SOCKET_ERROR)cout << "shutdown failed with error:\t" << FormatLastError(dwError, szError) << endl;
 
 }
