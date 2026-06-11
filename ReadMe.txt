@@ -2,6 +2,9 @@
 https://www.youtube.com/playlist?list=PLeqyOOqxeiIMQ8cxP8PmSD6FIDnY8e2rq
 
 TODO:
+1. Добить ShowActiveClients();
+
+DONE:
 1. Проверить, можно ли вызвать функцию без параметров при помощи CreateThread();
 2. Изучить теорию:
 	https://learn.microsoft.com/en-us/windows/win32/procthread/processes-and-threads

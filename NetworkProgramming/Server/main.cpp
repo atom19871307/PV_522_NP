@@ -19,7 +19,7 @@ using namespace std;
 #define MTU				 1500
 #define MAX_CONNECTIONS		3
 
-
+VOID ShowActiveClients();
 VOID ClientHandle(SOCKET client_socket);
 
 SOCKET client_sockets[MAX_CONNECTIONS] = {};
@@ -97,6 +97,7 @@ void main()
 	//6) Принимаем подключение от клиента
 	do
 	{
+		ShowActiveClients();
 		SOCKADDR_IN client_address;
 		INT client_address_len = sizeof(client_address);
 		SOCKET client_socket = accept(listen_socket, (SOCKADDR*)&client_address, &client_address_len);
@@ -127,6 +128,8 @@ void main()
 				&dwThreadIDs[g_ActiveClients]
 			);
 			g_ActiveClients++;
+			//ShowActiveClients();
+			cout << "Количество клиентов: " << g_ActiveClients << endl;
 		}
 		else
 		{
@@ -148,18 +151,54 @@ void main()
 	freeaddrinfo(target);
 	WSACleanup();
 }
-
+INT GetThreadIndex(DWORD dwThreadID)
+{
+	for (INT i = 0; i < g_ActiveClients; i++)
+	{
+		if (dwThreadID == dwThreadIDs[i])return i;
+	}
+	return -1;
+}
+VOID Shift(INT index)
+{
+	if (index == -1)return;
+	CloseHandle(hThreads[index]);
+	for (INT i = index; i < g_ActiveClients; i++)
+	{
+		client_sockets[i] = client_sockets[i + 1];
+		dwThreadIDs[i] = dwThreadIDs[i + 1];
+		hThreads[i] = hThreads[i + 1];
+	}
+	client_sockets[MAX_CONNECTIONS - 1] = NULL;
+	dwThreadIDs[MAX_CONNECTIONS - 1] = NULL;
+	hThreads[MAX_CONNECTIONS - 1] = NULL;
+	g_ActiveClients--;
+	ShowActiveClients();
+	cout << "Количество клиентов: " << g_ActiveClients << endl;
+}
+VOID ShowActiveClients()
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	GetConsoleScreenBufferInfo(hConsole, &info);
+	SetConsoleCursorPosition(hConsole, { 8,0 });
+	cout << "                                                                                ";
+	SetConsoleCursorPosition(hConsole, { 25,0 });
+	cout << "Количество клиентов: " << g_ActiveClients << endl;
+	SetConsoleCursorPosition(hConsole, info.dwCursorPosition);
+}
 VOID ClientHandle(SOCKET client_socket)
 {
 	INT iResult = 0;
 	DWORD dwError = 0;
 	CHAR szError[256] = {};
 	CHAR send_buffer[MTU] = "Hello client";
+	CHAR recv_buffer[MTU] = {};
 	INT iReceivedBytes = 0;
 	INT iSentBytes = 0;
 	do
 	{
-		CHAR recv_buffer[MTU] = {};
+		ZeroMemory(recv_buffer, MTU);
 		cout << &recv_buffer << endl;
 		iReceivedBytes = recv(client_socket, recv_buffer, MTU, 0);
 		dwError = WSAGetLastError();
@@ -172,13 +211,15 @@ VOID ClientHandle(SOCKET client_socket)
 			if (iSentBytes == SOCKET_ERROR)	cout << "Send failed with error:\t" << WSAGetLastError() << endl;
 			else cout << iSentBytes << " Bytes sent" << endl;
 		}
-		else if (iReceivedBytes == 0) cout << "Connection closing..." << endl;
+		//else if (iReceivedBytes == 0) cout << "Connection closing..." << endl;
 		else cout << "Receive failed with error: " << FormatLastError(dwError, szError) << endl;
-	} while (iReceivedBytes > 0);
+	} while (iReceivedBytes > 0 && strcmp(recv_buffer, "exit") != 0);
 
 	//8) Разрываем TCP-соединение:
 	iResult = shutdown(client_socket, SD_BOTH);
 	dwError = WSAGetLastError();
 	if (iResult != SOCKET_ERROR)cout << "shutdown failed with error:\t" << FormatLastError(dwError, szError) << endl;
-
+	closesocket(client_socket);
+	Shift(GetThreadIndex(GetCurrentThreadId()));
+	ExitThread(0);
 }
