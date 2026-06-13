@@ -96,6 +96,7 @@ void main()
 	//5) Отправка:
 	/*CHAR send_buffer[MTU] = "Привет Server";
 	CHAR recv_buffer[MTU] = {};*/
+	//5) Отправка:
 	DWORD dwThreadID = 0;
 	HANDLE hReceive = CreateThread
 	(
@@ -106,50 +107,70 @@ void main()
 		NULL,
 		&dwThreadID
 	);
-	do
+
+	// Очистка буфера обмена перед первым вызовом
+	// Մաքրում ենք բուֆերը առաջին անգամ կանչելուց առաջ
+	ZeroMemory(send_buffer, MTU);
+
+	while (true)
 	{
-		iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
-		dwError = WSAGetLastError();
-		if (iResult == SOCKET_ERROR)
-		{
-			cout << "Send failed with error: " << WSAGetLastError() << endl;
-			cout << FormatLastError(dwError, szError) << endl;
-			closesocket(connect_socket);
-			WSACleanup();
-			return;
-		}
-
-		//6) Получение данных:
-		
-		ZeroMemory(send_buffer, MTU);
-		if (strcmp(recv_buffer, DECLINE_MESSAGE) != 0)	cout << "Введите сообщение: ";
-		else cout << "Для выхода нажмите 'Enter'" << endl;
+		cout << "Введите сообщение: ";
 		SetConsoleCP(1251);
-		cin.getline(send_buffer, MTU);
+		cin.getline(send_buffer, MTU - 1);
 		SetConsoleCP(866);
-	} while (strcmp(send_buffer, "exit") != 0 && strcmp(recv_buffer, DECLINE_MESSAGE) != 0);//https://legacy.cplusplus.com/reference/cstring/strcmp/
 
-	iResult = shutdown(connect_socket, SD_BOTH);//Закрываем сокет на получение и отправку данных (разрываем TCP-соединение):
-	if (iResult == SOCKET_ERROR)
-		cout << "Shutdown failed with " << FormatLastError(WSAGetLastError(), szError) << endl;
-	//7) Освобождаем ресурсы WinSOCK:
+		// Если пользователь вводит exit, выходим из чата
+		// Եթե օգտատերը գրում է exit, դուրս ենք գալիս չատից
+		if (strcmp(send_buffer, "exit") == 0) break;
+
+		if (strlen(send_buffer) > 0)
+		{
+			iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
+			dwError = WSAGetLastError();
+			if (iResult == SOCKET_ERROR)
+			{
+				cout << "Send failed with error: " << dwError << endl;
+				break;
+			}
+		}
+	}
+
+	iResult = shutdown(connect_socket, SD_BOTH);
 	closesocket(connect_socket);
+	CloseHandle(hReceive);	// Закрываем дескриптор потока // Փակում ենք հոսքի դեսկրիպտորը
 	WSACleanup();
 }
+//***********************************************************************************************
 VOID Receive(SOCKET connect_socket)
 {
 	INT iResult = 0;
 	DWORD dwError = 0;
 	CHAR szError[256] = {};
-	ZeroMemory(recv_buffer, MTU);
-	//do
-	{
-		iResult = recv(connect_socket, recv_buffer, MTU, 0);
-		dwError = WSAGetLastError();
-		if (iResult > 0)
-			cout << "Bytes received: " << iResult << "Message: " << recv_buffer << endl;
-		else if (iResult == 0)cout << "Connection closed" << endl;
-		else cout << "Receive failed with " << FormatLastError(dwError, szError) << endl;
 
-	} while (iResult > 0);
+	// Бесконечный цикл для постоянного прослушивания сервера
+	while (true)
+	{
+		ZeroMemory(recv_buffer, MTU);
+		iResult = recv(connect_socket, recv_buffer, MTU - 1, 0);
+		dwError = WSAGetLastError();
+
+		if (iResult > 0)
+		{
+			recv_buffer[iResult] = '\0';
+			// Выводим полученное сообщение от сервера и переносим строку
+			cout << "\n" << recv_buffer << "\nВведите сообщение: ";
+		}
+		else if (iResult == 0)
+		{
+			cout << "\nСоединение закрыто сервером." << endl;
+			break;
+		}
+		else
+		{
+			// Если сокет закрылся во время ожидания, выходим из потока
+			if (dwError == WSAESHUTDOWN || dwError == WSAECONNRESET || dwError == WSAENOTSOCK) break;
+		}
+	}
+	ExitThread(0);
 }
+//**********************************************************************************************************

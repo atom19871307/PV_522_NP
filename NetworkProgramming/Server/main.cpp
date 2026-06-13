@@ -28,9 +28,18 @@ HANDLE hThreads[MAX_CONNECTIONS] = {};			//Дескрипторы потов
 
 INT g_ActiveClients = 0;
 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+CRITICAL_SECTION g_SendCriticalSection;
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
 void main()
 {
 	setlocale(LC_ALL, "");
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	InitializeCriticalSection(&g_SendCriticalSection);
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	DWORD dwError = 0;
 	CHAR szError[256] = {};
 	cout << "SERVER" << endl;
@@ -97,7 +106,7 @@ void main()
 	//6) Принимаем подключение от клиента
 	do
 	{
-		ShowActiveClients();
+		//ShowActiveClients();
 		SOCKADDR_IN client_address;
 		INT client_address_len = sizeof(client_address);
 		SOCKET client_socket = accept(listen_socket, (SOCKADDR*)&client_address, &client_address_len);
@@ -150,6 +159,9 @@ void main()
 	//9) Освобождаем ресурсы, занятиые WinSOCK:
 	closesocket(listen_socket);
 	freeaddrinfo(target);
+	//********************************************************************************
+	DeleteCriticalSection(&g_SendCriticalSection);
+	//*******************************************************************************
 	WSACleanup();
 }
 INT GetClientIndex(DWORD dwThreadID)
@@ -191,45 +203,58 @@ VOID ShowActiveClients()
 VOID Broadcast(CHAR sz_Message[], INT client_index)
 {
 	INT iResult = 0;
+	//*********************************************************************************
+	EnterCriticalSection(&g_SendCriticalSection);
+	//*********************************************************************************
 	for (INT i = 0; i < g_ActiveClients; i++)
 	{
 		if (i != client_index)
 			iResult = send(client_sockets[i], sz_Message, strlen(sz_Message), 0);
 	}
+	//*********************************************************************************
+	LeaveCriticalSection(&g_SendCriticalSection);
+	//*********************************************************************************
 }
+
 VOID ClientHandle(SOCKET client_socket)
 {
 	INT iResult = 0;
 	DWORD dwError = 0;
 	CHAR szError[256] = {};
-	CHAR send_buffer[MTU] = "Hello client";
 	CHAR recv_buffer[MTU] = {};
 	INT iReceivedBytes = 0;
-	INT iSentBytes = 0;
+
+	SOCKADDR_IN client_address;
+	INT client_address_len = sizeof(client_address);
+	getpeername(client_socket, (SOCKADDR*)&client_address, &client_address_len);
+
+	CHAR sz_client_address[32] = {};
+	inet_ntop(AF_INET, &client_address.sin_addr, sz_client_address, 32);
+	INT client_port = ntohs(client_address.sin_port);
+
 	do
 	{
 		ZeroMemory(recv_buffer, MTU);
-		cout << &recv_buffer << endl;
-		iReceivedBytes = recv(client_socket, recv_buffer, MTU, 0);
+		iReceivedBytes = recv(client_socket, recv_buffer, MTU - 1, 0); // MTU - 1, որ տեղ մնա \0-ի համար
 		dwError = WSAGetLastError();
-		//Функция recv() - Receive ожидает получение данных по указанному сокету, и возвращает количество полученных Байт.
-		if (iReceivedBytes > 0)Broadcast(recv_buffer, GetClientIndex(GetCurrentThreadId()));
-		{
-			//sprintf(send_buffer, "\x1b[32m%s\x1b[0m", recv_buffer);
-			/*cout << "Received " << iReceivedBytes << " " << recv_buffer << endl;
-			iSentBytes = send(client_socket, recv_buffer, strlen(recv_buffer), 0);
-			if (iSentBytes == SOCKET_ERROR)	cout << "Send failed with error:\t" << WSAGetLastError() << endl;
-			else cout << iSentBytes << " Bytes sent" << endl;*/
-		}
-		//else if (iReceivedBytes == 0) cout << "Connection closing..." << endl;
-		//else cout << "Receive failed with error: " << FormatLastError(dwError, szError) << endl;
-	} while (iReceivedBytes > 0 && strcmp(recv_buffer, "exit") != 0);
 
+		if (iReceivedBytes > 0)
+		{
+			recv_buffer[iReceivedBytes] = '\0'; // Պարտադիր փակում ենք տողը
+
+			// Ձևավորում ենք տողը
+			CHAR broadcast_buffer[MTU] = {};
+			sprintf_s(broadcast_buffer, "[%s:%d]: %s", sz_client_address, client_port, recv_buffer);
+
+			// Ուղարկում ենք բոլորին
+			Broadcast(broadcast_buffer, GetClientIndex(GetCurrentThreadId()));
+		}
+	} while (iReceivedBytes > 0 && strcmp(recv_buffer, "exit") != 0);
+	
+	
 	//8) Разрываем TCP-соединение:
 	iResult = shutdown(client_socket, SD_BOTH);
-	dwError = WSAGetLastError();
-	if (iResult != SOCKET_ERROR)cout << "shutdown failed with error:\t" << FormatLastError(dwError, szError) << endl;
 	closesocket(client_socket);
 	Shift(GetClientIndex(GetCurrentThreadId()));
 	ExitThread(0);
-}
+}	
