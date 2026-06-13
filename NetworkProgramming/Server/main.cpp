@@ -223,15 +223,20 @@ VOID ClientHandle(SOCKET client_socket)
 	CHAR szError[256] = {};
 	CHAR recv_buffer[MTU] = {};
 	INT iReceivedBytes = 0;
-
+	//------------------------------------------------------------------------------------
+	//Начало функции
 	SOCKADDR_IN client_address;
 	INT client_address_len = sizeof(client_address);
+	
+	// В этой строке мы берем данные о клиенте с сокета
 	getpeername(client_socket, (SOCKADDR*)&client_address, &client_address_len);
 
 	CHAR sz_client_address[32] = {};
+	// С помощью этой строки мы преобразуем IP-адрес из двоичной формы в текст (строку)
 	inet_ntop(AF_INET, &client_address.sin_addr, sz_client_address, 32);
 	INT client_port = ntohs(client_address.sin_port);
 
+	//-----------------------------------------------------------------------------------
 	do
 	{
 		ZeroMemory(recv_buffer, MTU);
@@ -242,7 +247,7 @@ VOID ClientHandle(SOCKET client_socket)
 		{
 			recv_buffer[iReceivedBytes] = '\0'; // Պարտադիր փակում ենք տողը
 
-			// Ձևավորում ենք տողը
+			// Мы соединяем IP, порт и сообщение вместе с помощью этой строки
 			CHAR broadcast_buffer[MTU] = {};
 			sprintf_s(broadcast_buffer, "[%s:%d]: %s", sz_client_address, client_port, recv_buffer);
 
