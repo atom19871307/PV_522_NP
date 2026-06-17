@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.36001.139
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36915.13 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{6E77EC9E-204F-44A1-A5BF-A187DBABC464}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StaticArray", "StaticArray\StaticArray.vcxproj", "{B28A0E07-D48C-4ED0-8B72-C9B719BD614C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Threads", "Threads\Threads.vcxproj", "{55B4A54D-AE44-4018-B70E-015AB44880BE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Car", "Car\Car.vcxproj", "{921A6C2D-80FC-4E73-A9D9-1730F1A49893}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +63,14 @@ Global
 		{55B4A54D-AE44-4018-B70E-015AB44880BE}.Release|x64.Build.0 = Release|x64
 		{55B4A54D-AE44-4018-B70E-015AB44880BE}.Release|x86.ActiveCfg = Release|Win32
 		{55B4A54D-AE44-4018-B70E-015AB44880BE}.Release|x86.Build.0 = Release|Win32
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Debug|x64.ActiveCfg = Debug|x64
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Debug|x64.Build.0 = Debug|x64
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Debug|x86.ActiveCfg = Debug|Win32
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Debug|x86.Build.0 = Debug|Win32
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Release|x64.ActiveCfg = Release|x64
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Release|x64.Build.0 = Release|x64
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Release|x86.ActiveCfg = Release|Win32
+		{921A6C2D-80FC-4E73-A9D9-1730F1A49893}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
