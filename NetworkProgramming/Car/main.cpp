@@ -1,4 +1,4 @@
-#include<iostream>
+ï»¿#include<iostream>
 #include<conio.h>
 using std::cin;
 using std::cout;
@@ -145,7 +145,7 @@ void main()
 	int amount;
 	while (true)
 	{
-		cout << "Ââåäèòå îáüåì òîïëèâà: "; cin >> amount;
+		cout << "Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¾Ð±ÑŒÐµÐ¼ Ñ‚Ð¾Ð¿Ð»Ð¸Ð²Ð°: "; cin >> amount;
 		tank.Fill(amount);
 		tank.info();
 	}
